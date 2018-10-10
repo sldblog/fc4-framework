@@ -11,7 +11,7 @@ The [current workflow](https://fundingcircle.github.io/fc4-framework/methodology
 
 1. The dev runs a command such as:
     1. `fc4 render`
-    1. `fc4 render --watch` 
+    1. `fc4 render --watch`
     1. `fc4 render views/us/us_system_landscape.yaml`
     1. `fc4 render --watch --model foo/bar/model/ foo/bar/views`
 1. fc4-tool would then render the specified view or views into PNG files, using either the specified model path or using the default model path of `./model/`
@@ -46,7 +46,7 @@ Structurizr does have a Web API, and I’ve [corresponded](https://gist.github.c
 
 ### Structurizr Express + Scripted Headless Browser
 
-I had already started playing around with this approach when Simon Brown suggested it in [our correspondence](https://gist.github.com/aviflax/e274b87e558b3ca3d24a8c3f81843fc5). Using [Puppeteer](https://pptr.dev) with headless Chrome this _should_ be fairly straightfoward. (I didn’t quite get it to work when I was playing around with it, but I didn’t spend much time on it back then; I didn’t have a chance to see it through.) 
+I had already started playing around with this approach when Simon Brown suggested it in [our correspondence](https://gist.github.com/aviflax/e274b87e558b3ca3d24a8c3f81843fc5). Using [Puppeteer](https://pptr.dev) with headless Chrome this _should_ be fairly straightfoward. (I didn’t quite get it to work when I was playing around with it, but I didn’t spend much time on it back then; I didn’t have a chance to see it through.)
 
 #### Cons
 
