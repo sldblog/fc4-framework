@@ -68,12 +68,12 @@ I saw in [Whimsical’s architecture diagram](https://whimsical.co/Q5patpyGV3RDv
 
 ### Paper.js + JSDom
 
-I found [in Paper’s README](https://github.com/paperjs/paper.js#installing-paperjs-for-nodejs) that it apparently supports rendering graphics in Node, as opposed to in a browser, via [jsdom](https://github.com/jsdom/jsdom). This might be desirable because it wouldn’t require the user to have a recent version of Chrome installed.
+I found [in Paper’s README](https://github.com/paperjs/paper.js#installing-paperjs-for-nodejs) that it apparently supports rendering graphics in Node, as opposed to in a browser, via [jsdom](https://github.com/jsdom/jsdom). This might be desirable because it wouldn’t require the user to have a recent version of Chrome installed. And, _if_ we were to [migrate fc4-tool to ClojureScript](#on-clojurescript), then this approach might not require any additional system dependencies beyond Node.
 
 #### Cons
 
 * Pretty low-level; potentially lots of work to get the layout and aesthetics right
-* Would add some system dependencies to fc4-tool: Node and maybe ClojureScript.
+* Might add a system dependency to fc4-tool: Node — unless we [migrate fc4-tool to ClojureScript](#on-clojurescript)
 
 ### JGraphX
 
@@ -128,9 +128,11 @@ I found [in Paper’s README](https://github.com/paperjs/paper.js#installing-pap
   		<td>✓</td>
   	</tr>
   	<tr>
-  		<th>Paper.js + JSDom</th>
-  		<td>✕</td>
-  		<td>✕</td>
+  		<td><b>Paper.js + JSDom</b><br>
+       (*If* we [migrate fc4-tool to ClojureScript](#on-clojurescript))
+      </td>
+  		<td>✓</td>
+  		<td>✓</td>
   		<td>✓</td>
   	</tr>
   	<tr>
