@@ -1,8 +1,9 @@
 # FC4 Enhancement Proposal EP03: Website Improvements
 
-by Avi Flax
+This Enhancement Proposal is:
 
-This Enhancement Proposal is part of [a batch of proposals](https://github.com/FundingCircle/fc4-framework/issues/72) being discussed and considered (initially) in October 2018.
+* By [Avi Flax](https://github.com/aviflax/)
+* Part of [a batch of proposals](https://github.com/FundingCircle/fc4-framework/issues/72) being discussed and considered (initially) in October 2018
 
 ## Summary
 
