@@ -12,8 +12,8 @@ elements:
   position: '725,50'
 - type: Software System
   name: Structurizr Express
-  position: '700,900'
   description: Web app that renders diagrams from YAML
+  position: '700,900'
 - type: Software System
   name: fc4-tool
   position: '700,500'
@@ -27,12 +27,12 @@ relationships:
 styles:
 - type: element
   tag: Element
-  shape: RoundedBox
-  width: '400'
-  height: '250'
   background: '#2486DC'
   color: '#ffffff'
   fontSize: '26'
+  height: '250'
+  shape: RoundedBox
+  width: '400'
 - type: element
   tag: Person
   shape: Person
