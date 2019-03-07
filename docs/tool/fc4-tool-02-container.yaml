@@ -4,11 +4,11 @@ links:
 ---
 type: Container
 scope: fc4-tool
-description: https://fundingcircle.github.io/fc4-framework/ • last edited 2018-11-13 by Avi Flax (avi.flax@fundingcircle.com)
+description: https://fundingcircle.github.io/fc4-framework/ • last edited 2019-03-07 by Avi Flax (avi.flax@fundingcircle.com)
 
 elements:
 - type: Person
-  name: User
+  name: Software Creator
   position: '725,50'
 - type: Software System
   name: Structurizr Express
@@ -39,7 +39,7 @@ relationships:
   destination: Renderer
 - source: Renderer
   destination: Chromium
-- source: User
+- source: Software Creator
   destination: Main Executable
 
 styles:
