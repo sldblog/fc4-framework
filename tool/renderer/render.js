@@ -129,10 +129,15 @@ async function conjoin(diagramImage, keyImage) {
   const finalHeight = diagram.bitmap.height + separatorWidth + keyHeight;
   const keyY = diagram.bitmap.height + separatorWidth;
 
-  // Prepare the key
   key.scale(keyScale);
-  const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
-  key.print(font, 0, 5, 'Key');
+
+  try {
+    const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
+    key.print(font, 0, 5, 'Key');
+  } catch (err) {
+    console.error(`🚨 WARNING: could not render label “Key” above key: ${err}`);
+  }
+
   key.background(Jimp.cssColorToHex('white'));
   key.contain(finalWidth, keyHeight);
 
@@ -149,8 +154,14 @@ async function render(diagramYaml, browser, args) {
   const page = await loadStructurizrExpress(browser);
   await setYamlAndUpdateDiagram(page, diagramYaml);
   const diagramImage = await exportDiagram(page);
-  const keyImage = await exportKey(page);
-  return conjoin(diagramImage, keyImage);
+
+  try {
+    const keyImage = await exportKey(page);
+    return await conjoin(diagramImage, keyImage);
+  } catch (err) {
+    console.error(`🚨 WARNING: could not add key to diagram: ${err}`);
+    return diagramImage;
+  }
 }
 
 // On success: returns a Puppeteer browser object
@@ -188,8 +199,8 @@ function printErrorMessages(err, preppedYaml) {
   const machineOutput = { message: err.message };
 
   if (err.errors) {
-    // If the error has a property `errors` then it’s an Error object that’s been thrown within
-    // `render`.
+    // If the error has a property `errors` then it’s probably an Error object that’s been thrown
+    // within `render`.
     humanOutput = `RENDERING FAILED: ${err.message}:\n`
     humanOutput += err.errors.map(errErr => `  💀 ${errErr.message}`).join('\n');
     machineOutput.errors = err.errors;

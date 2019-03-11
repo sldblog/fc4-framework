@@ -57,25 +57,34 @@ jobs:
              bin/pkg-all
              mkdir -p /workspace/packages
              mv target/pkg/*.gz /workspace/packages/
-       - run:
-           # Packaging any node app with pkg can be tricky; that’s doubly true for an app that uses
-           # Puppeteer. So it’s a good idea to ensure that the packaged renderer actually works.
-           # The JVM component’s ability to invoke the packaged renderer is also susceptible to
-           # breakage, so here we try to invoke the tool to render a diagram just as a user would.
-           name: Test packaged renderer
-           command: |
-             mkdir test-renders
-             target/pkg/linux/fc4/fc4 render \
-               test/data/structurizr/express/diagram_valid_messy.yaml
-             cp test/data/structurizr/express/diagram_valid_messy.png test-renders/1.png
        - persist_to_workspace: {root: /workspace, paths: [packages]}
        - store_artifacts: {path: /workspace/packages}
-       - store_artifacts: {path: test-renders}
        - save_cache:
            key: pkg-deps-{{checksum "deps.edn"}}-{{ checksum "renderer/package.json" }}-{{checksum "bin/download-pkg-deps"}}
            # ~/.npm is needed here because that is (or includes) npm’s cache, and that’s where pkg
            # downloads the built node runtimes for various platforms.
            paths: [.cpcache, ~/.m2, ~/.gitlibs, ~/.npm, ~/node_modules]
+
+   tool_test_dist_pkg:
+     # Packaging any node app with pkg can be tricky; that’s doubly true for an app that uses
+     # Puppeteer. So it’s a good idea to ensure that the packaged renderer actually works.
+     # The JVM component’s ability to invoke the packaged renderer is also susceptible to
+     # breakage, so here we try to invoke the tool to render a diagram just as a user would.
+     <<: *tool_job_defaults
+     working_directory: ~/test/test-renders # overrides the value in tool_job_defaults.
+     steps:
+       - checkout: {path: ~/project} # only so we can access the test diagram YAML file
+       - attach_workspace: {at: /workspace}
+       - run:
+           name: Extract tool from distribution package
+           command: tar -xzv -f /workspace/packages/fc4-tool-linux-*.tar.gz -C /tmp
+       - run:
+           name: Move test diagram YAML into place
+           command: mv ~/project/tool/test/data/structurizr/express/diagram_valid_messy.yaml test-render-1.yaml
+       - run:
+           name: Render the diagram
+           command: /tmp/fc4/fc4 render test-render-1.yaml
+       - store_artifacts: {path: ~/test/test-renders}
 
    tool_publish_dist_pkg:
      <<: *tool_job_defaults
@@ -121,5 +130,6 @@ workflows:
     jobs:
       - tool_test
       - tool_clj_lint
-      - tool_build_dist_pkg: {requires: [tool_test, tool_clj_lint]}
-      - tool_publish_dist_pkg: {requires: [tool_build_dist_pkg]}
+      - tool_build_dist_pkg
+      - tool_test_dist_pkg: {requires: [tool_build_dist_pkg]}
+      - tool_publish_dist_pkg: {requires: [tool_test, tool_test_dist_pkg]}
