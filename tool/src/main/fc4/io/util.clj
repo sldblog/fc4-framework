@@ -3,7 +3,7 @@
   support *other* namespaces that *do* actually do I/O."
   (:require [clojure.java.io :as io :refer [copy file output-stream]]
             [clojure.spec.alpha :as s]
-            [clojure.string :refer [includes? split]]
+            [clojure.string :refer [includes?]]
             [fc4.spec :as fs]
             [fc4.util :as fu])
   (:import [java.io ByteArrayOutputStream FileNotFoundException]))
@@ -39,12 +39,6 @@
   ([path msg cause]
    (apply fu/fail
           (remove nil? [(err-msg path msg) {} cause]))))
-
-(defn remove-filename-extension
-  "fp should be a string containing either a filename or a path ending with a
-  filename."
-  [fp]
-  (first (split fp #"\." 3)))
 
 (defn binary-slurp
   "fp should be either a java.io.File or something coercable to such by

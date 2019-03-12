@@ -7,7 +7,8 @@
             [clojure.java.io :as io :refer [file]]
             [clojure.spec.alpha :as s]
             [clojure.string :as str :refer [ends-with? includes? split]]
-            [fc4.io.util :refer [binary-spit debug err-msg fail read-text-file remove-filename-extension]]
+            [fc4.files :refer [remove-extension]]
+            [fc4.io.util :refer [binary-spit debug err-msg fail read-text-file]]
             [fc4.io.yaml :as yaml]
             [fc4.integrations.structurizr.express.render :as r]
             [fc4.spec :as fs]
@@ -16,10 +17,7 @@
 
 (defn tmp-png-file
   [path]
-  (-> (file path)
-      (.getName)
-      (remove-filename-extension)
-      (File/createTempFile ".maybe.png")))
+  (File/createTempFile (remove-extension path) ".maybe.png"))
 
 (s/fdef tmp-png-file
   :args (s/cat :path (s/and ::fs/file-path-str
