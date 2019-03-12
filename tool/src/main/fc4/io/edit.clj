@@ -8,7 +8,7 @@
             [hawk.core :as hawk])
   (:import [java.time Instant LocalTime]
            [java.time.temporal ChronoUnit]
-           (java.io File)))
+           (java.io File OutputStreamWriter)))
 
 (def seconds (ChronoUnit/SECONDS))
 (def min-secs-between-changes 1)
@@ -55,7 +55,12 @@
 
 (defn process-fs-event
   [context {:keys [file] :as _event}]
-  (process-file context file))
+  ;; I don’t know why, but for some reason when this function is called by Hawk
+  ;; in its background thread, *out* appears to be bound to a writer that isn’t
+  ;; writing to System.out. We need it to be System.out so the tests can capture
+  ;; the text written to System.out for use in assertions.
+  (binding [*out* (OutputStreamWriter. System/out)]
+    (process-file context file)))
 
 (def current-watch
   "Useful during development."
