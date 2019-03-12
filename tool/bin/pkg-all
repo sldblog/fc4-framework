@@ -20,7 +20,8 @@ for os in mac linux; do
 
   echo "  Collecting files in $pkg_dir..."
   mkdir -p $pkg_dir
-  cp target/pkg/fc4.jar dist/fc4 README.md $pkg_dir/
+  cp target/pkg/fc4.jar dist/fc4 $pkg_dir/
+  cp ../docs/tool/index.md $pkg_dir/README.md
   cp "target/pkg/renderer/render-$os" $pkg_dir/fc4-render
 
   archive="fc4-tool-$os-amd64-$GIT_HEAD_SHA.tar.gz"
