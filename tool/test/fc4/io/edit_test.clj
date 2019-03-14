@@ -69,7 +69,7 @@
       (is (.exists png-file))
       (is (= (.length yaml-file) yaml-file-size-before))
       (is (> (.length png-file) 50000))
-      (is (= (count-substring stdout "✅") 1))
+      (is (= (count-substring stdout "✅") 2))
       (is (= (count (split-lines stdout)) 2))
       (delete-file yaml-file)
       (delete-file png-file))))
@@ -89,7 +89,7 @@
                    (run! #(append % "\n") yaml-files)
                    (Thread/sleep 12000)
                    (e/stop))]
-      (is (= (count-substring stdout "✅") 2))
+      (is (= (count-substring stdout "✅") 4))
       (is (= (count (split-lines stdout)) 3))
       (doseq [png-file png-files]
         (is (.exists png-file))
