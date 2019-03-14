@@ -1,5 +1,6 @@
 (ns fc4.io.edit-test
   (:require [clojure.java.io :refer [copy delete-file file writer]]
+            [clojure.string :refer [split-lines]]
             [clojure.test :refer [deftest is testing]]
             [fc4.files :refer [get-extension remove-extension set-extension]]
             [fc4.io.edit :as e])
@@ -69,5 +70,31 @@
       (is (= (.length yaml-file) yaml-file-size-before))
       (is (> (.length png-file) 50000))
       (is (= (count-substring stdout "✅") 1))
+      (is (= (count (split-lines stdout)) 2))
       (delete-file yaml-file)
       (delete-file png-file))))
+
+(deftest edit-workflow-two-files-changed-simultaneously
+  (testing "changing two files simultaneously"
+    (let [yaml-source "test/data/structurizr/express/diagram_valid_cleaned.yaml"
+          yaml-files (repeatedly 2 #(tmp-copy yaml-source))
+          png-files (map #(file (set-extension % "png")) yaml-files)
+          yaml-file-size-before (.length (first yaml-files)) ; they’re identical
+          _ (doseq [png-file png-files]
+              (is (or (not (.exists png-file))
+                      (.delete png-file))))
+          stdout (with-system-out-str
+                   (apply e/start yaml-files)
+                   (Thread/sleep 1000)
+                   (run! #(append % "\n") yaml-files)
+                   (Thread/sleep 12000)
+                   (e/stop))]
+      (is (= (count-substring stdout "✅") 2))
+      (is (= (count (split-lines stdout)) 3))
+      (doseq [png-file png-files]
+        (is (.exists png-file))
+        (is (> (.length png-file) 50000))
+        (delete-file png-file))
+      (doseq [yaml-file yaml-files]
+        (is (= (.length yaml-file) yaml-file-size-before))
+        (delete-file yaml-file)))))
