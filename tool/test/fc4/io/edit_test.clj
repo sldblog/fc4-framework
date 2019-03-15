@@ -60,17 +60,17 @@
           yaml-file-size-before (.length yaml-file)
           _ (is (or (not (.exists png-file))
                     (.delete png-file)))
+          watch (e/start (str yaml-file))
           stdout (with-system-out-str
-                   (e/start (str yaml-file))
-                   (Thread/sleep 1000)
+                   (Thread/sleep 100)
                    (append yaml-file "\n")
-                   (Thread/sleep 10000)
-                   (e/stop))]
+                   (Thread/sleep 10000))]
+      (e/stop watch)
       (is (.exists png-file))
       (is (= (.length yaml-file) yaml-file-size-before))
       (is (> (.length png-file) 50000))
       (is (= (count-substring stdout "✅") 2))
-      (is (= (count (split-lines stdout)) 2))
+      (is (= (count (split-lines stdout)) 1))
       (delete-file yaml-file)
       (delete-file png-file))))
 
@@ -83,14 +83,14 @@
           _ (doseq [png-file png-files]
               (is (or (not (.exists png-file))
                       (.delete png-file))))
+          watch (apply e/start yaml-files)
           stdout (with-system-out-str
-                   (apply e/start yaml-files)
-                   (Thread/sleep 1000)
+                   (Thread/sleep 100)
                    (run! #(append % "\n") yaml-files)
-                   (Thread/sleep 12000)
-                   (e/stop))]
+                   (Thread/sleep 12000))]
+      (e/stop watch)
       (is (= (count-substring stdout "✅") 4))
-      (is (= (count (split-lines stdout)) 3))
+      (is (= (count (split-lines stdout)) 2))
       (doseq [png-file png-files]
         (is (.exists png-file))
         (is (> (.length png-file) 50000))

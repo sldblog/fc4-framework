@@ -11,33 +11,12 @@
            [java.time.temporal ChronoUnit]
            [java.util.concurrent Executors ExecutorService]))
 
-;; Mutable state 😱😱😱
-(def executor
-  "Contains the ExecutorService used to process files in the background. An atom
-  is used because during development and testing we need to be able to stop and
-  then “restart” the ExecutorService. Because the ExecutorService implementation
-  we’re using (ThreadPoolExecutor) can’t actually be restarted, we “restart” it
-  by replacing it with a new one."
-  (atom nil))
-
-(def active-set
-  "The set of files that are being processed or are enqueued to be processed.
-  This is used to discard subsequent file modification events that occur while a
-  file is being processed or is enqueued to be processed — this is crucial
-  because there’s always _at least_ one subsequent modification event, because
-  the files are modified by process-file 😵!"
-  (atom #{}))
-
-(def current-watch
-  "Useful during development and testing."
-  (atom nil))
-
 (defn secs-since
   [inst]
   (.between (ChronoUnit/SECONDS) inst (LocalTime/now)))
 
 (defn process-fs-event?
-  [_context {:keys [kind file] :as _event}]
+  [active-set _context {:keys [kind file] :as _event}]
   (and (#{:create :modify} kind)
        (yaml-file? file)
        (not (contains? @active-set file))))
@@ -54,7 +33,7 @@
   (.withNano instant 0))
 
 (defn process-file
-  [event-ts event-kind ^File file]
+  [active-set event-ts event-kind ^File file]
   (let [elapsed-secs (secs-since event-ts)]
     (print-now (remove-nanos (LocalTime/now)) " "
                (.getName file) " "
@@ -77,35 +56,47 @@
       (println "🚨" (or (.getMessage e) e)))))
 
 (defn process-fs-event
-  [_context {:keys [kind file] :as _event}]
+  [active-set executor _context {:keys [kind file] :as _event}]
   (swap! active-set conj file)
   (let [event-ts (LocalTime/now)]
-    (.execute @executor
+    (.execute executor
               (fn []
                 ;; I don’t know why, but for some reason when this function is
-                ;; called by Hawk in its background thread, *out* appears to be
-                ;; bound to a writer that isn’t writing to System.out. We need
-                ;; it to be System.out so the tests can capture the text written
-                ;; to System.out for use in assertions.
+                ;; run in the Executor’s thread, *out* appears to be bound to a
+                ;; writer that isn’t writing to System.out. We need it to be
+                ;; System.out so the tests can capture the text written to
+                ;; System.out for use in assertions.
                 (binding [*out* (OutputStreamWriter. System/out)]
-                  (process-file event-ts kind file))))))
+                  (process-file active-set event-ts kind file))))))
+
+(defn start
+  "Starts a hawk watch and returns the watch object, enriched with a few keys
+  specific to this workflow: :executor and :active-set. You can pass the result
+  to stop to stop both the executor and hawk’s background thread, after which
+  they should be garbage-collected, if you don’t hold on to a reference."
+  [& paths]
+  (let [; The set of files that are being processed or are enqueued to be processed.
+        ; This is used to discard subsequent file modification events that occur while a
+        ; file is being processed or is enqueued to be processed — this is crucial
+        ; because there’s always _at least_ one subsequent modification event, because
+        ; the files are modified by process-file 😵!"
+        active-set (atom #{})
+
+        ; The actual event processing has to occur in a different thread than
+        ; the Hawk background thread, because rendering is blocking and very
+        ; slow, and we need to process filesystem events quickly with low
+        ; latency.
+        executor   (. Executors newSingleThreadExecutor)
+        watch      (hawk/watch!
+                    [{:paths   paths
+                      :filter  (partial process-fs-event? active-set)
+                      :handler (partial process-fs-event active-set executor)}])
+        result     (assoc watch :active-set active-set, :executor executor)]
+    (println "📣 Now watching for changes to YAML files under specified paths...")
+    result))
 
 (defn stop
   "Useful during development and testing."
-  ([] (when @current-watch
-        (stop @current-watch)))
-  ([watch]
-   (hawk/stop! watch)
-   (when @executor
-     (.shutdownNow @executor))))
-
-(defn start
-  [& paths]
-  (stop)
-  (reset! active-set #{})
-  (reset! executor (. Executors newSingleThreadExecutor))
-  (let [watch (hawk/watch! [{:paths   paths
-                             :filter  process-fs-event?
-                             :handler process-fs-event}])]
-    (println "📣 Now watching for changes to YAML files under specified paths...")
-    (reset! current-watch watch)))
+  [{:keys [executor] :as watch}]
+  (hawk/stop! watch)
+  (.shutdownNow executor))
