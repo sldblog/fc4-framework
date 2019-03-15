@@ -1,6 +1,6 @@
 (ns fc4.files
   (:require [clojure.spec.alpha  :as s]
-            [clojure.string      :as str :refer [ends-with? starts-with?]]
+            [clojure.string      :as str :refer [ends-with? split starts-with?]]
             [fc4.spec           :as fs]))
 
 (defn relativize
@@ -19,3 +19,29 @@
   :args (s/cat :path ::fs/file-path
                :parent-path ::fs/dir-path)
   :ret  ::fs/file-path-str)
+
+(defn get-extension
+  "fp should be a File object representing a file path or a string containing a
+  file path. The path may be relative or absolute. Returns the extension as a
+  string _without_ a prefixed period/dot."
+  [fp]
+  (-> (str fp)
+      (split #"\.")
+      (last)))
+
+(defn remove-extension
+  "fp should be a File object representing a file path or a string containing a
+  file path. The path may be relative or absolute. The path is returned as a
+  string with the filename extension, if any, removed."
+  [fp]
+  (-> (str fp)
+      (split #"\." 3)
+      (first)))
+
+(defn set-extension
+  "Sets the extension part of a filename, overwriting the existing extension, if
+  any. fp should be a File object representing a file path or a string
+  containing a file path. The path may be relative or absolute. Returns the new
+  path as a string."
+  [fp ext]
+  (str (remove-extension fp) "." ext))
