@@ -1,7 +1,7 @@
 (ns fc4.io.edit-test
   (:require [clojure.java.io :refer [copy delete-file file writer]]
             [clojure.string :refer [split-lines]]
-            [clojure.test :refer [deftest is testing]]
+            [clojure.test :refer [deftest is testing use-fixtures]]
             [fc4.files :refer [get-extension remove-extension set-extension]]
             [fc4.io.edit :as e])
   (:import [java.io ByteArrayOutputStream File OutputStreamWriter PrintStream]))
@@ -16,23 +16,6 @@
   (with-open [w (writer f :append true)]
     (.write w v)))
 
-(defmacro with-system-out-str
-  {:source "https://gist.github.com/jeremyheiler/66ba8ff62650fb0de700"}
-  [& body]
-  `(let [out# System/out
-         buf# (ByteArrayOutputStream.)
-         prs# (PrintStream. buf#)
-         wtr# (OutputStreamWriter. prs#)]
-     (try
-       (System/setOut prs#)
-       (binding [*out* wtr#]
-         ~@body)
-       (finally
-         (.flush wtr#)
-         (.flush prs#)
-         (System/setOut out#)))
-     (.toString buf#)))
-
 (defn tmp-copy
   "Creates a new tempfile with a very similar name to the input file/path
   and the same contents as the file/path. Returns a File object pointing to
@@ -45,6 +28,15 @@
         tmp-file (File/createTempFile base-name suffix dir)]
     (copy source tmp-file)
     tmp-file))
+
+(defn no-debug
+  "Ensure that debug messages don’t get printed, so we can make assertions about
+  the output of the functions under test."
+  [f]
+  (reset! fc4.io.util/debug? false)
+  (f))
+
+(use-fixtures :each no-debug)
 
 ;; It’s common for tests to be broader than these, and to use `testing` to test
 ;; various scenarios. These tests are smaller and more specific, using basically
@@ -60,17 +52,18 @@
           yaml-file-size-before (.length yaml-file)
           _ (is (or (not (.exists png-file))
                     (.delete png-file)))
-          watch (e/start (str yaml-file))
-          stdout (with-system-out-str
+          watch (atom nil)
+          output (with-out-str
+                   (reset! watch (e/start (str yaml-file)))
                    (Thread/sleep 100)
                    (append yaml-file "\n")
                    (Thread/sleep 10000))]
-      (e/stop watch)
+      (e/stop @watch)
       (is (.exists png-file))
-      (is (= (.length yaml-file) yaml-file-size-before))
-      (is (> (.length png-file) 50000))
-      (is (= (count-substring stdout "✅") 2))
-      (is (= (count (split-lines stdout)) 1))
+      (is (= yaml-file-size-before (.length yaml-file)))
+      (is (<= 50000 (.length png-file)))
+      (is (= 2 (count-substring output "✅")))
+      (is (= 2 (count (split-lines output))))
       (delete-file yaml-file)
       (delete-file png-file))))
 
@@ -83,17 +76,18 @@
           _ (doseq [png-file png-files]
               (is (or (not (.exists png-file))
                       (.delete png-file))))
-          watch (apply e/start yaml-files)
-          stdout (with-system-out-str
+          watch (atom nil)
+          output (with-out-str
+                   (reset! watch (apply e/start yaml-files))
                    (Thread/sleep 100)
                    (run! #(append % "\n") yaml-files)
                    (Thread/sleep 12000))]
-      (e/stop watch)
-      (is (= (count-substring stdout "✅") 4))
-      (is (= (count (split-lines stdout)) 2))
+      (e/stop @watch)
+      (is (= 4 (count-substring output "✅")))
+      (is (= 3 (count (split-lines output))))
       (doseq [png-file png-files]
         (is (.exists png-file))
-        (is (> (.length png-file) 50000))
+        (is (<= 50000 (.length png-file)))
         (delete-file png-file))
       (doseq [yaml-file yaml-files]
         (is (= (.length yaml-file) yaml-file-size-before))

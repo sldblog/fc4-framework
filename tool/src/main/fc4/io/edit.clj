@@ -56,17 +56,20 @@
       (println "🚨" (or (.getMessage e) e)))))
 
 (defn process-fs-event
-  [active-set executor _context {:keys [kind file] :as _event}]
+  [active-set executor out _context {:keys [kind file] :as _event}]
   (swap! active-set conj file)
   (let [event-ts (LocalTime/now)]
     (.execute executor
               (fn []
                 ;; I don’t know why, but for some reason when this function is
-                ;; run in the Executor’s thread, *out* appears to be bound to a
-                ;; writer that isn’t writing to System.out. We need it to be
-                ;; System.out so the tests can capture the text written to
-                ;; System.out for use in assertions.
-                (binding [*out* (OutputStreamWriter. System/out)]
+                ;; run in the Executor’s thread, *out* appears to be bound to
+                ;; some other writer, rather than the default writer that is the
+                ;; root binding. This re-binds *out* to the writer passed in as
+                ;; out, which enables us to have multiple instances of this
+                ;; workflow run simultaneously and print to independent writers
+                ;; so that the output can be examined in test assertions without
+                ;; concern of those multiple workflows sharing the same writer.
+                (binding [*out* out]
                   (process-file active-set event-ts kind file))))))
 
 (defn start
@@ -82,6 +85,17 @@
         ; the files are modified by process-file 😵!"
         active-set (atom #{})
 
+        ;; I don’t know why, but for some reason when our handler function is
+        ;; run in the Executor’s thread, *out* appears to be bound to some other
+        ;; writer, rather than the default writer that is the root binding. So
+        ;; we’ll provide that default writer from _this_ thread to the handler
+        ;; function (using partial, see below). This enables us to have multiple
+        ;; instances of this workflow run simultaneously and print to
+        ;; independent writers so that the output can be examined in test
+        ;; assertions without concern of those multiple workflows sharing the
+        ;; same writer.
+        out *out*
+
         ; The actual event processing has to occur in a different thread than
         ; the Hawk background thread, because rendering is blocking and very
         ; slow, and we need to process filesystem events quickly with low
@@ -90,7 +104,7 @@
         watch      (hawk/watch!
                     [{:paths   paths
                       :filter  (partial process-fs-event? active-set)
-                      :handler (partial process-fs-event active-set executor)}])
+                      :handler (partial process-fs-event active-set executor out)}])
         result     (assoc watch :active-set active-set, :executor executor)]
     (println "📣 Now watching for changes to YAML files under specified paths...")
     result))
