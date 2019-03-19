@@ -72,3 +72,16 @@
                                         (.getMessage e))
                                    {}
                                    e))))
+
+(defn beep
+  "Prints a beep character (7) to stdout and then flushes stdout."
+  []
+  (print (char 7))
+  (flush))
+
+(defn print-now
+  "Concatenates args with str, prints the result to stdout using print, then
+   flushes stdout."
+  [& args]
+  (print (apply str args))
+  (flush))

@@ -1,7 +1,8 @@
 (ns fc4.files
-  (:require [clojure.spec.alpha  :as s]
-            [clojure.string      :as str :refer [ends-with? split starts-with?]]
-            [fc4.spec           :as fs]))
+  "These functions assist working with files and file paths; they do NOT do I/O."
+  (:require [clojure.spec.alpha :as s]
+            [clojure.string :refer [ends-with? split starts-with?]]
+            [fc4.spec :as fs]))
 
 (defn relativize
   "Accepts two absolute paths. If the first is a “child” of the second, the
