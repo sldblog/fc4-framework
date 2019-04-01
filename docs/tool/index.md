@@ -19,6 +19,36 @@ Methodology](../methodology/):
 > * Renders diagrams
 
 
+## Features
+
+The tool has two main features:
+
+### Formatting
+
+Rewrites [Structurizr Express][structurizr-express] diagram YAML files:
+
+* Removes properties with empty/blank values
+* Removes extraneous quotes around values that are obviously strings
+* Sorts properties and elements using a known and stable sort order
+* “Snaps” the elements and vertices to a virtual grid
+  * i.e. rounds their coordinates
+* Adjusts element coordinates if necessary so as to create top and left margins in the diagram
+  * i.e. ensures that all elements are at least 50px away from the top/left edges of the canvas
+* Offsets the positions of `People` elements so they’ll align properly with other kinds of elements
+  (working around a rendering quirk of Structurizr Express)
+
+
+### Rendering
+
+Given [Structurizr Express][structurizr-express] diagram YAML files, creates PNG image files that
+contain the visualization of the diagram.
+
+* The resulting image file is created in the same directory as the YAML file, with the same filename
+  except its extension is `png`
+  * e.g. `docs/spline_reticulator_01_context.yaml` yields `docs/spline_reticulator_01_context.png`
+* If the image file already exists it will be overwritten
+
+
 ## Setup
 
 ### Requirements
@@ -57,7 +87,58 @@ MacOS quick-start for [Homebrew](https://brew.sh/) users: `brew cask install ado
       corresponding PNG file has also been created/changed
    1. Commit both files
 
-## Full Workflow
+### Full Workflow
 
 Please see [The Authoring Workflow](../methodology/authoring_workflow.html) section of
 [the FC4 Methodology](../methodology/).
+
+
+## Commands
+
+The `fc4` program supports multiple commands:
+
+### edit
+
+`fc4 edit file-or-dir ...`
+
+Launches the tool in a persistent mode to effect the authoring workflow described
+[above](#abridged-workflow).
+
+* One or more paths must be supplied
+* Each Structurizr Express YAML file specified or found in or under specified directories
+  (recursively) will be watched for changes
+* When a change is observed the tool will [reformat](#formatting) and [render](#rendering) the
+  modified file
+
+### format
+
+`fc4 format file ...`
+
+Reformats each specified Structurizr Express YAML file as described [above](#formatting).
+
+* One or more file paths must be supplied
+* Does not render
+
+### render
+
+`fc4 render file ...`
+
+Renders each specified Structurizr Express YAML file as described [above](#rendering)
+
+* One or more file paths must be supplied
+* The resulting image file is created in the same directory as the YAML file, with the same filename
+  except its extension will be `png`
+  * e.g. `docs/spline_reticulator_01_context.yaml` yields `docs/spline_reticulator_01_context.png`
+* If the image file already exists it will be overwritten
+* Does not format or otherwise modify the YAML file
+
+### process
+
+`fc4 process file ...`
+
+[Reformats](#formatting) **and** [renders](#rendering) each specified Structurizr Express YAML file.
+
+* One or more file paths must be supplied
+
+
+[structurizr-express]: https://structurizr.com/help/express
