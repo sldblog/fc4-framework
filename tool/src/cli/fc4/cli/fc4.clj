@@ -5,14 +5,18 @@
    [clojure.string   :as str     :refer [join]]
    [fc4.cli.edit     :as edit]
    [fc4.cli.export   :as export]
+   [fc4.cli.format   :as format]
+   [fc4.cli.process  :as process]
    [fc4.cli.render   :as render]
    [fc4.cli.util     :as cu      :refer [exit fail]])
   (:import [java.nio.charset Charset]))
 
 (def subcommands
-  {:edit   edit/-main
-   :export export/-main
-   :render render/-main})
+  {:edit    edit/-main
+   :export  export/-main
+   :format  format/-main
+   :process process/-main
+   :render  render/-main})
 
 (defn invalid-subcommand-message
   [subcommand]
