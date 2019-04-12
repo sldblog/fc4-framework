@@ -57,7 +57,7 @@
                    (reset! watch (e/start (str yaml-file)))
                    (Thread/sleep 100)
                    (append yaml-file "\n")
-                   (Thread/sleep 10000))]
+                   (Thread/sleep 12000))]
       (e/stop @watch)
       (is (.exists png-file))
       (is (= yaml-file-size-before (.length yaml-file)))
@@ -81,9 +81,12 @@
                    (reset! watch (apply e/start yaml-files))
                    (Thread/sleep 100)
                    (run! #(append % "\n") yaml-files)
-                   (Thread/sleep 12000))]
+                   (Thread/sleep 18000))]
       (e/stop @watch)
-      (is (= 4 (count-substring output "✅")))
+      (is (= 4 (count-substring output "✅"))
+          (str "Output should have had 4 ✅:\n"
+               output
+               "\n»» Maybe rendering timed out or just took longer than the sleep above?"))
       (is (= 3 (count (split-lines output))))
       (doseq [png-file png-files]
         (is (.exists png-file))
