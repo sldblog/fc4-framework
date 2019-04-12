@@ -2,7 +2,8 @@
   "CLI subcommand that renders Structurizr Express diagrams into PNG image
   files."
   (:require [fc4.cli.util :as cu :refer [debug fail]]
-            [fc4.io.render :refer [render-diagram-file]]))
+            [fc4.io.render :refer [render-diagram-file]]
+            [fc4.io.util :refer [print-now]]))
 
 (defn -main
   ;; NB: if and when we add options we’ll probably want to use
@@ -15,8 +16,7 @@
   [& paths]
   (try
     (doseq [path paths]
-      (print (str path "..."))
-      (flush)
+      (print-now path ": rendering...")
       (render-diagram-file path)
       (println "✅"))
     (catch Exception e
