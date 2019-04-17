@@ -65,7 +65,7 @@ MacOS quick-start for [Homebrew](https://brew.sh/) users: `brew cask install ado
 
 ### Download and Install
 
-1. Download the archive for your platform from the latest release on [the releases page](https://github.com/FundingCircle/fc4-framework/releases)
+1. Download the archive for your platform from [the latest release](https://github.com/FundingCircle/fc4-framework/releases/latest)
 1. Expand the archive
 1. Optional: move the extracted files to somewhere on your $PATH
    1. e.g. `mv ~/Downloads/fc4/fc4* ~/bin/`
@@ -141,4 +141,12 @@ Renders each specified Structurizr Express YAML file as described [above](#rende
 * One or more file paths must be supplied
 
 
+## Source Code
+
+Like the entire framework, the tool is [Free and Libre Open Source Software (FLOSS)][floss] so its
+source code is readily available for review or modification via [its GitHub repository][repo].
+
+
+[floss]: https://en.wikipedia.org/wiki/Free_and_open-source_software
+[repo]: https://github.com/FundingCircle/fc4-framework
 [structurizr-express]: https://structurizr.com/help/express
