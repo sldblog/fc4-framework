@@ -141,4 +141,12 @@ Renders each specified Structurizr Express YAML file as described [above](#rende
 * One or more file paths must be supplied
 
 
+## Source Code
+
+Like the entire framework, the tool is [Free and Libre Open Source Software (FLOSS)][floss] so its
+source code is readily available for review or modification via [its GitHub repository][repo].
+
+
+[floss]: https://en.wikipedia.org/wiki/Free_and_open-source_software
+[repo]: https://github.com/FundingCircle/fc4-framework
 [structurizr-express]: https://structurizr.com/help/express

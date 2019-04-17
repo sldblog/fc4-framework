@@ -58,4 +58,4 @@ The functionality of fc4-tool will expand over time to include additional featur
 
 Please continue to [The Repository](repository.md) or go back to [the top page](README.md).
 
-[fc4-tool]: https://github.com/FundingCircle/fc4-framework/tree/master/tool
+[fc4-tool]: ../tool/
