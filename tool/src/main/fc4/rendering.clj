@@ -3,10 +3,8 @@
             [cognitect.anomalies :as anom]))
 
 (s/def ::png-bytes (s/and bytes? #(not (zero? (count %)))))
-(s/def ::error (s/keys :req [::anom/message]))
-(s/def ::errors (s/coll-of ::error))
 (s/def ::success-result (s/keys :req [::png-bytes]))
-(s/def ::failure-result (s/merge ::anom/anomaly (s/keys :req [::errors])))
+(s/def ::failure-result ::anom/anomaly)
 
 (defprotocol Renderer
   "A potentially resource-intensive abstraction that can render Structurizr

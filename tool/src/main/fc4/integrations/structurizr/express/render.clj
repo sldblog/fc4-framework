@@ -1,7 +1,6 @@
 (ns fc4.integrations.structurizr.express.render
   (:require [clojure.java.io      :as io        :refer [file]]
             [clojure.java.shell   :as shell     :refer [sh]]
-            [clojure.data.json    :as json]
             [clojure.spec.alpha   :as s]
             [clojure.string       :as str       :refer [ends-with? includes? split trim]]
             [cognitect.anomalies  :as anom]
@@ -47,29 +46,6 @@
       (throw (Exception. (str "Error finding fenced segments in error output: "
                               s)))))
 
-(defn- parse-json-err
-  [js]
-  (try
-    (json/read-str js :key-fn (partial keyword (str (ns-name 'cognitect.anomalies))))
-    (catch Exception e
-      (throw (if (includes? (.getMessage e) "JSON error")
-               (Exception. (str "Error while parsing JSON fenced by 🤖🤖🤖: " js)
-                           e)
-               e)))))
-
-(defn- parse-stderr-err
-  "Parses the contents of stderr, presumably the output of a failed invocation
-  of the renderer, into a structured value."
-  [stderr]
-  {::anom/message (get-fenced stderr "🚨🚨🚨")
-   ::rendering/errors (-> (get-fenced stderr "🤖🤖🤖")
-                          (parse-json-err)
-                          (::anom/errors))})
-
-(s/fdef parse-stderr-err
-  :args (s/cat :stderr string?)
-  :ret  (s/keys :req [::anom/message ::rendering/errors]))
-
 (defn- render-with-node
   "Renders a Structurizr Express diagram as a PNG file, returning a PNG
   bytearray on success. Not entirely pure; spawns a child process to perform the rendering.
@@ -89,9 +65,9 @@
         {:keys [exit out err]} result]
     (if (zero? exit)
       {::rendering/png-bytes out}
-      (-> (parse-stderr-err err)
-          (merge {::anom/category    ::anom/fault
-                  ::rendering/stderr err})))))
+      {::anom/category    ::anom/fault
+       ::anom/message     (get-fenced err "🚨🚨🚨")
+       ::rendering/stderr err})))
 
 ; This spec is here mainly for documentation and instrumentation. I don’t
 ; recommend using it for generative testing, mainly because rendering is
