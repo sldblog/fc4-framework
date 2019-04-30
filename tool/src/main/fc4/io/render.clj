@@ -10,7 +10,7 @@
             [fc4.files :refer [remove-extension]]
             [fc4.io.util :refer [binary-spit debug err-msg fail read-text-file]]
             [fc4.io.yaml :as yaml]
-            [fc4.integrations.structurizr.express.render :refer [->NodeRenderer]]
+            [fc4.integrations.structurizr.express.node-renderer :refer [->NodeRenderer]]
             [fc4.rendering :as r :refer [render]]
             [fc4.spec :as fs])
   (:import [java.io File FileNotFoundException]))
