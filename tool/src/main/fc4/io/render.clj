@@ -11,7 +11,7 @@
             [fc4.io.util :refer [binary-spit debug err-msg fail read-text-file]]
             [fc4.io.yaml :as yaml]
             [fc4.integrations.structurizr.express.render :refer [->NodeRenderer]]
-            [fc4.rendering :as r :refer [start render]]
+            [fc4.rendering :as r :refer [render]]
             [fc4.spec :as fs])
   (:import [java.io File FileNotFoundException]))
 
@@ -99,7 +99,7 @@
   a file in the same directory as the YAML file. Returns the path of the PNG
   file that was written (as a string) or throws an Exception."
   [in-path]
-  (with-open [renderer (start (->NodeRenderer))]
+  (with-open [renderer (->NodeRenderer)]
     (let [yaml     (read-text-file in-path)
           _        (yaml/validate yaml in-path)
           result   (render renderer yaml)
