@@ -1,17 +1,16 @@
 (ns fc4.integrations.structurizr.express.render
-  (:require [clojure.java.io      :as io      :refer [file]]
-            [clojure.java.shell   :as shell   :refer [sh]]
+  (:require [clojure.java.io      :as io        :refer [file]]
+            [clojure.java.shell   :as shell     :refer [sh]]
             [clojure.data.json    :as json]
             [clojure.spec.alpha   :as s]
-            [clojure.string       :as str     :refer [ends-with? includes? split trim]]
+            [clojure.string       :as str       :refer [ends-with? includes? split trim]]
             [cognitect.anomalies  :as anom]
-            [expound.alpha        :as expound :refer [expound-str]]
-            [fc4.integrations.structurizr.express.spec :as ss]
-            [fc4.util             :as fu    :refer [namespaces]]))
+            [fc4.rendering        :as rendering :refer [Renderer]]
+            [fc4.util             :as fu        :refer [namespaces]]))
 
 (namespaces '[structurizr :as st])
 
-(defn jar-dir
+(defn- jar-dir
   "Utility function to get the path to the dir in which the jar in which this
   function is invoked is located.
   Adapted from https://stackoverflow.com/a/13276993/7012"
@@ -23,7 +22,7 @@
       .getProtectionDomain .getCodeSource .getLocation .toURI .getPath
       file .toPath .getParent .toFile))
 
-(defn renderer-command
+(defn- renderer-command
   []
   (let [possible-paths [; This first one must be first so it’s preferred to an
                         ; “installed” executable when running tests from source
@@ -39,7 +38,7 @@
               possible-paths)
         hopefully-on-path)))
 
-(defn get-fenced
+(defn- get-fenced
   "If fence is found, returns the fenced string; if not, throws."
   [s sep]
   (or (some-> (split s (re-pattern sep) 3)
@@ -48,43 +47,30 @@
       (throw (Exception. (str "Error finding fenced segments in error output: "
                               s)))))
 
-; We have to capture this at compile time in order for it to have the value we
-; want it to; if we referred to *ns* in the body of a function then, because it
-; is dynamically bound, it would return the namespace at the top of the stack,
-; the “currently active namespace” rather than what we want, which is the
-; namespace of this file, because that’s the namespace all our keywords are
-; qualified with.
-(def ^:private this-ns-name (str *ns*))
-
-(defn parse-json-err
+(defn- parse-json-err
   [js]
   (try
-    (json/read-str js :key-fn (partial keyword this-ns-name))
+    (json/read-str js :key-fn (partial keyword (str (ns-name 'cognitect.anomalies))))
     (catch Exception e
       (throw (if (includes? (.getMessage e) "JSON error")
                (Exception. (str "Error while parsing JSON fenced by 🤖🤖🤖: " js)
                            e)
                e)))))
 
-(defn parse-stderr-err
+(defn- parse-stderr-err
   "Parses the contents of stderr, presumably the output of a failed invocation
   of the renderer, into a structured value."
   [stderr]
-  {::human-output (get-fenced stderr "🚨🚨🚨")
-   ::error        (parse-json-err (get-fenced stderr "🤖🤖🤖"))})
-
-(s/def ::stderr string?)
-(s/def ::human-output string?)
-(s/def ::message string?)
-(s/def ::errors (s/coll-of ::error))
-(s/def ::error (s/keys :req [::message]
-                       :opt [::errors]))
+  {::anom/message (get-fenced stderr "🚨🚨🚨")
+   ::rendering/errors (-> (get-fenced stderr "🤖🤖🤖")
+                          (parse-json-err)
+                          (::anom/errors))})
 
 (s/fdef parse-stderr-err
-  :args ::stderr
-  :ret  (s/keys :req [::error ::human-output]))
+  :args (s/cat :stderr string?)
+  :ret  (s/keys :req [::anom/message ::rendering/errors]))
 
-(defn render
+(defn- render-with-node
   "Renders a Structurizr Express diagram as a PNG file, returning a PNG
   bytearray on success. Not entirely pure; spawns a child process to perform the rendering.
   FWIW, that process is stateless and ephemeral."
@@ -102,27 +88,27 @@
                    :out-enc :bytes)
         {:keys [exit out err]} result]
     (if (zero? exit)
-      {::png-bytes out
-       ::stderr    err}
-      (let [{:keys [::human-output ::error]} (parse-stderr-err err)]
-        {::anom/category ::anom/fault
-         ::anom/message  human-output
-         ::stderr        err
-         ::error         error}))))
-
-(s/def ::png-bytes (s/and bytes? #(> (count %) 0)))
-(s/def ::result (s/keys :req [::png-bytes ::stderr]))
-
-(s/def ::failure
-  (s/merge ::anom/anomaly (s/keys :req [::stderr ::error])))
+      {::rendering/png-bytes out}
+      (-> (parse-stderr-err err)
+          (merge {::anom/category    ::anom/fault
+                  ::rendering/stderr err})))))
 
 ; This spec is here mainly for documentation and instrumentation. I don’t
 ; recommend using it for generative testing, mainly because rendering is
 ; currently quite slow (~2s on my system).
-(s/fdef render
+(s/fdef render-with-node
   :args (s/cat :diagram ::st/diagram-yaml-str)
-  :ret  (s/or :success ::result
-              :failure ::failure))
+  :ret  (s/or :success ::rendering/success-result
+              :failure ::rendering/failure-result))
+
+(defrecord NodeRenderer []
+  Renderer
+  (start [renderer] renderer)
+  (render [renderer diagram-yaml] (render-with-node diagram-yaml))
+  (stop [renderer] renderer)
+
+  java.io.Closeable
+  (close [renderer] nil))
 
 (comment
   (use 'clojure.java.io 'clojure.java.shell 'fc4.io.util)

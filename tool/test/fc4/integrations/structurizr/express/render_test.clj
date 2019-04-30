@@ -1,7 +1,7 @@
 (ns fc4.integrations.structurizr.express.render-test
-  (:require [fc4.integrations.structurizr.express.render :as r]
+  (:require [fc4.integrations.structurizr.express.render :refer [->NodeRenderer]]
             [fc4.io.util :refer [binary-spit binary-slurp]]
-            [fc4.test-utils :refer [check]]
+            [fc4.rendering :as r]
             [fc4.test-utils.image-diff :refer [bytes->buffered-image image-diff]]
             [clojure.java.io :refer [copy file input-stream output-stream]]
             [clojure.spec.alpha :as s]
@@ -48,14 +48,14 @@
   (testing "happy paths"
     (testing "rendering a Structurizr Express file"
       (let [yaml (slurp (file dir "diagram_valid_cleaned.yaml"))
-            {:keys [::r/png-bytes ::r/stderr] :as result} (r/render yaml)
+            {:keys [::r/png-bytes ::r/stderr] :as result} (r/render (->NodeRenderer) yaml)
             actual-bytes png-bytes
             expected-bytes (binary-slurp (file dir "diagram_valid_cleaned_expected.png"))
             difference (->> [actual-bytes expected-bytes]
                             (map bytes->buffered-image)
                             (map #(resize % 1000 1000))
                             (reduce image-diff))]
-        (is (s/valid? ::r/result result) (s/explain-str ::r/result result))
+        (is (s/valid? ::r/success-result result) (s/explain-str ::r/success-result result))
         (is (<= difference max-allowable-image-difference)
             ;; NB: below in addition to returning a message we write the actual
             ;; bytes out to the file system, to help with debugging. But
@@ -79,15 +79,15 @@
     (testing "inputs that contain no diagram definition whatsoever"
       (doseq [input [""
                      "this is not empty, but it’s not a diagram!"]]
-        (let [{:keys [::anom/message ::r/error] :as result} (r/render input)]
-          (is (s/valid? ::r/failure result)
-              (expound-str ::r/failure result))
+        (let [{:keys [::anom/message ::r/errors] :as result} (r/render (->NodeRenderer) input)]
+          (is (s/valid? ::r/failure-result result)
+              (expound-str ::r/failure-result result))
           (is (every? (partial includes? message)
                       ["RENDERING FAILED"
                        "Errors were found in the diagram definition"
                        "No diagram has been defined"]))
-          (is (includes? (::r/message error) "Errors were found in the diagram definition"))
-          (is (includes? (-> error ::r/errors first ::r/message) "No diagram has been defined")))))
+          (is (includes? message "Errors were found in the diagram definition"))
+          (is (includes? (some-> errors first ::anom/message) "No diagram has been defined")))))
     (testing "inputs that contain invalid diagram definitions"
       (doseq [[fname-suffix expected-strings]
               {"a.yaml" ["Diagram scope" "software system named" "undefined" "could not be found"]
@@ -95,9 +95,9 @@
                "c.yaml" ["relationship destination element named" "Does not exist" "does not exist"]}]
         (let [path (file dir (str "se_diagram_invalid_" fname-suffix))
               input (slurp path)
-              {:keys [::anom/message ::r/error] :as result} (r/render input)]
-          (is (s/valid? ::r/failure result)
-              (expound-str ::r/failure result))
-          (is (every? (partial includes? message) expected-strings))
-          (is (every? (partial includes? (some-> error ::r/errors first ::r/message)) expected-strings))
-          (is (includes? (::r/message error) "Errors were found in the diagram definition")))))))
+              {:keys [::anom/message ::r/errors] :as result} (r/render (->NodeRenderer) input)]
+          (is (s/valid? ::r/failure-result result)
+              (expound-str ::r/failure-result result))
+          (is (every? #(includes? message %) expected-strings))
+          (is (every? #(includes? (some-> errors first ::anom/message) %) expected-strings))
+          (is (includes? message "Errors were found in the diagram definition")))))))
