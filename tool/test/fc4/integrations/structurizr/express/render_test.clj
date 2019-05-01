@@ -79,15 +79,14 @@
     (testing "inputs that contain no diagram definition whatsoever"
       (doseq [input [""
                      "this is not empty, but it’s not a diagram!"]]
-        (let [{:keys [::anom/message ::r/errors] :as result} (r/render (->NodeRenderer) input)]
+        (let [{:keys [::anom/message] :as result} (r/render (->NodeRenderer) input)]
           (is (s/valid? ::r/failure-result result)
               (expound-str ::r/failure-result result))
           (is (every? (partial includes? message)
                       ["RENDERING FAILED"
                        "Errors were found in the diagram definition"
                        "No diagram has been defined"]))
-          (is (includes? message "Errors were found in the diagram definition"))
-          (is (includes? (some-> errors first ::anom/message) "No diagram has been defined")))))
+          (is (includes? message "Errors were found in the diagram definition")))))
     (testing "inputs that contain invalid diagram definitions"
       (doseq [[fname-suffix expected-strings]
               {"a.yaml" ["Diagram scope" "software system named" "undefined" "could not be found"]
@@ -95,9 +94,7 @@
                "c.yaml" ["relationship destination element named" "Does not exist" "does not exist"]}]
         (let [path (file dir (str "se_diagram_invalid_" fname-suffix))
               input (slurp path)
-              {:keys [::anom/message ::r/errors] :as result} (r/render (->NodeRenderer) input)]
+              {:keys [::anom/message] :as result} (r/render (->NodeRenderer) input)]
           (is (s/valid? ::r/failure-result result)
               (expound-str ::r/failure-result result))
-          (is (every? #(includes? message %) expected-strings))
-          (is (every? #(includes? (some-> errors first ::anom/message) %) expected-strings))
-          (is (includes? message "Errors were found in the diagram definition")))))))
+          (is (every? #(includes? message %) expected-strings)))))))
