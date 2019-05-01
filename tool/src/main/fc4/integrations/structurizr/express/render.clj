@@ -79,9 +79,7 @@
 
 (defrecord NodeRenderer []
   Renderer
-  (start [renderer] renderer)
   (render [renderer diagram-yaml] (render-with-node diagram-yaml))
-  (stop [renderer] renderer)
 
   java.io.Closeable
   (close [renderer] nil))
