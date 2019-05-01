@@ -85,17 +85,22 @@
   (close [renderer] nil))
 
 (comment
-  (use 'clojure.java.io 'clojure.java.shell 'fc4.io.util)
-  (require :reload '[fc4.integrations.structurizr.express.render :as r])
-  (in-ns 'fc4.integrations.structurizr.express.render)
+  (require :reload
+           '[fc4.rendering :as rendering :refer [render]]
+           '[fc4.integrations.structurizr.express.render :refer [->NodeRenderer]]
+           '[fc4.io.util :refer [binary-spit]])
+  (def test-data-dir "test/data/structurizr/express/")
+  (def filenames
+    {:valid     "diagram_valid_cleaned.yaml"
+     :invalid_a "se_diagram_invalid_a.yaml"
+     :invalid_b "se_diagram_invalid_b.yaml"
+     :invalid_c "se_diagram_invalid_c.yaml"})
 
-  ; diagram-yaml
-  (def dy (slurp "test/data/structurizr/express/diagram_valid_cleaned.yaml"))
-
-  ; png-bytes
-  (def result (render dy))
-  (def pngb (or (::png-bytes result)
-                (::anom/message result)
-                "WTF"))
-
-  (binary-spit "/tmp/diagram.png" pngb))
+  (as-> :valid it
+    (str test-data-dir (get filenames it))
+    (slurp it)
+    (render (->NodeRenderer) it)
+    (or (::rendering/png-bytes it)
+        (::anom/message it)
+        "WTF")
+    (binary-spit "/tmp/diagram.png" it)))
