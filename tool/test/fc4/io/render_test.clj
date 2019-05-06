@@ -1,15 +1,11 @@
 (ns fc4.io.render-test
   (:require [clojure.java.io      :as jio :refer [delete-file file]]
-            [clojure.spec.alpha   :as s]
-            [clojure.string       :as str :refer [includes?]]
             [clojure.test         :as ct :refer [deftest is testing]]
-            [cognitect.anomalies  :as anom]
             [fc4.io.render        :as r]
             [fc4.io.util          :as iou :refer [binary-slurp]]
             [fc4.test-utils       :as tu :refer [check]]
             [fc4.test-utils.image-diff :refer [bytes->buffered-image image-diff]]
-            [fc4.util :as fu])
-  (:import [java.io FileNotFoundException]))
+            [fc4.util :as fu]))
 
 ; Require image-resizer.core while preventing the Java app icon from popping up
 ; and grabbing focus on MacOS.

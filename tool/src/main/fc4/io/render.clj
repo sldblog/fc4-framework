@@ -10,9 +10,9 @@
             [fc4.files :refer [remove-extension]]
             [fc4.io.util :refer [binary-spit debug err-msg fail read-text-file]]
             [fc4.io.yaml :as yaml]
-            [fc4.integrations.structurizr.express.render :as r]
-            [fc4.spec :as fs]
-            [fc4.util :as fu])
+            [fc4.integrations.structurizr.express.render :refer [->NodeRenderer]]
+            [fc4.rendering :as r :refer [render]]
+            [fc4.spec :as fs])
   (:import [java.io File FileNotFoundException]))
 
 (defn tmp-png-file
@@ -64,8 +64,8 @@
    nil))
 
 (s/fdef check
-  :args (s/cat :result (s/or :success ::r/result
-                             :failure ::r/failure)
+  :args (s/cat :result (s/or :success ::r/success-result
+                             :failure ::r/failure-result)
                :path   ::fs/file-path-str)
   :ret  (s/or :success nil?
               :failure (partial instance? Exception))
@@ -99,11 +99,12 @@
   a file in the same directory as the YAML file. Returns the path of the PNG
   file that was written (as a string) or throws an Exception."
   [in-path]
-  (let [yaml     (read-text-file in-path)
-        _        (yaml/validate yaml in-path)
-        result   (r/render yaml)
-        _        (debug (::r/stderr result))
-        _        (check result in-path)
-        out-path (yaml-path->png-path in-path)]
-    (binary-spit out-path (::r/png-bytes result))
-    out-path))
+  (with-open [renderer (->NodeRenderer)]
+    (let [yaml     (read-text-file in-path)
+          _        (yaml/validate yaml in-path)
+          result   (render renderer yaml)
+          _        (debug (::r/stderr result))
+          _        (check result in-path)
+          out-path (yaml-path->png-path in-path)]
+      (binary-spit out-path (::r/png-bytes result))
+      out-path)))
