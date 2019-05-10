@@ -49,11 +49,11 @@
     (render-diagram-file file)
     (println "✅")
 
-    (swap! active-set disj file)
-
     (catch Exception e
       (beep) ; good chance the user’s terminal is in the background
-      (println "🚨" (or (.getMessage e) e)))))
+      (println "🚨" (or (.getMessage e) e)))
+    (finally
+      (swap! active-set disj file))))
 
 (defn process-fs-event
   [active-set executor out _context {:keys [kind file] :as _event}]
