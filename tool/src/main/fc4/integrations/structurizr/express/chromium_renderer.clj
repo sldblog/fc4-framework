@@ -193,7 +193,7 @@
   ;; Protect developers from themselves
   {:pre [(not (ends-with? diagram-yaml ".yaml")) (not (ends-with? diagram-yaml ".yml"))]}
   ;; TODO: LOTS more error handling!
-  (load-structurizr-express automation structurizr-express-url)
+  (load-structurizr-express automation structurizr-express-url) ;; TODO: Check return value!
   (if-let [err-msg (set-yaml-and-update-diagram automation (prep-yaml diagram-yaml))]
     (fault err-msg)
     (let [diagram-image (extract-diagram automation)

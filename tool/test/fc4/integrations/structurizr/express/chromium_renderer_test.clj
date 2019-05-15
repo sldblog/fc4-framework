@@ -15,8 +15,12 @@
             ;[orchestra.spec.test :as stest]
             [clojure.spec.test.alpha :as stest]))
 
+;; TODO: maybe add this to the project’s custom test runner runner.
 (set! *warn-on-reflection* true)
 
+;; At first I just called instrument with no args, but I ran into trouble with some specs/fns inside
+;; clj-chrome-devtools. So I came up with this overwrought approach to instrumenting only the functions in
+;; the namespace under test.
 (->> (ns-interns 'fc4.integrations.structurizr.express.chromium-renderer)
      (vals)
      (map symbol)
