@@ -3,7 +3,8 @@
             [clojure.string :refer [split-lines]]
             [clojure.test :refer [deftest is testing use-fixtures]]
             [fc4.files :refer [get-extension remove-extension set-extension]]
-            [fc4.io.edit :as e])
+            [fc4.io.edit :as e]
+            [fc4.io.util :as u])
   (:import [java.io ByteArrayOutputStream File OutputStreamWriter PrintStream]))
 
 (defn count-substring
@@ -33,7 +34,7 @@
   "Ensure that debug messages don’t get printed, so we can make assertions about
   the output of the functions under test."
   [f]
-  (reset! fc4.io.util/debug? false)
+  (reset! u/debug? false)
   (f))
 
 (use-fixtures :each no-debug)
@@ -66,6 +67,27 @@
       (is (= 2 (count (split-lines output))))
       (delete-file yaml-file)
       (delete-file png-file))))
+
+(deftest edit-workflow-error-should-not-break-watch
+  ;; We had a bug wherein if an exception was thrown while rendering — and the
+  ;; current workflow does use exceptions, to my regret — further changes to
+  ;; that file would not trigger processing.
+  (testing "a rendering error should not break the watch for that file"
+    (let [yaml-file (tmp-copy "test/data/structurizr/express/se_diagram_invalid_c.yaml")
+          watch (atom nil)
+          output (with-out-str
+                   (reset! watch (e/start (str yaml-file)))
+                   (Thread/sleep 100)
+                   (append yaml-file "\n")
+                   (Thread/sleep 5000)
+                   (append yaml-file "\n")
+                   (Thread/sleep 5000))]
+      (e/stop @watch)
+      (is (= 2 (count-substring output "✅")))
+      (is (= 2 (count-substring output "🚨")))
+      (is (= 2 (count-substring output "💀")))
+      (is (= 5 (count (split-lines output))))
+      (delete-file yaml-file))))
 
 (deftest edit-workflow-two-files-changed-simultaneously
   (testing "changing two files simultaneously"
