@@ -1,5 +1,5 @@
-(ns fc4.integrations.structurizr.express.render-test
-  (:require [fc4.integrations.structurizr.express.render :refer [->NodeRenderer]]
+(ns fc4.integrations.structurizr.express.node-renderer-test
+  (:require [fc4.integrations.structurizr.express.node-renderer :refer [->NodeRenderer]]
             [fc4.io.util :refer [binary-spit binary-slurp]]
             [fc4.rendering :as r]
             [fc4.test-utils.image-diff :refer [bytes->buffered-image image-diff]]

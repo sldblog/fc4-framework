@@ -1,8 +1,19 @@
 {:paths ["src/main" "src/cli"]
+
+ ;; It may seem redundant to include this key with the value being the same as the usual default
+ ;; (as set in the “installation” deps.edn — the one that lives with Clojure’s files). This is
+ ;; indeed included here for a somewhat esoteric reason: because Cambada, which is used to build the
+ ;; “überjar” for this tool (see the :uberjar alias below) can’t access the installation deps.edn
+ ;; and doesn’t want to make assumptions for us. For more info see:
+ ;;   https://github.com/luchiniatwork/cambada/issues/19#issuecomment-490013695
+ :mvn/repos {"central" {:url "http://central.maven.org/maven2/"}
+             "clojars" {:url "https://repo.clojars.org/"}}
+
  :deps
  {org.clojure/clojure         {:mvn/version "1.10.0"}
   org.clojure/spec.alpha      {:mvn/version "0.2.176"}
   org.clojure/tools.cli       {:mvn/version "0.4.1"}
+  clj-chrome-devtools         {:mvn/version "20190502"}
   clj-commons/clj-yaml        {:mvn/version "0.6.1"}
   expound                     {:mvn/version "0.7.2"}
   com.cognitect/anomalies     {:mvn/version "0.1.12"}
@@ -14,7 +25,7 @@
   ;; to fail. I’m overriding the dependency here at the root level, which takes precedence over the
   ;; profiles, because I want to ensure that we’ll use the same version of joda-time when running
   ;; the tests and building a distribution package (uberjar).
-  joda-time/joda-time         {:mvn/version "2.10.1"}
+  joda-time/joda-time {:mvn/version "2.10.1"}
 
   ;; Conflicting versions of jna are resolved via org.clojure/tools.gitlibs and hawk.
   net.java.dev.jna/jna          {:mvn/version "5.2.0"}
@@ -24,15 +35,17 @@
   ;; because we’re using one of its generators in a spec in a source file.
   ;; This means we’ll also need org.clojure/test.check at runtime. Not ideal,
   ;; but worth it.
-  com.gfredericks/test.chuck  {:mvn/version "0.2.9"}}
+  com.gfredericks/test.chuck {:mvn/version "0.2.9"}}
 
  :aliases {:dev           {:extra-deps  {org.clojure/tools.trace    {:mvn/version "0.7.9"}
                                          inspectable                {:mvn/version "0.2.2"}}
-                           :jvm-opts    ["-XX:-OmitStackTraceInFastThrow"]}
+                           :jvm-opts    ["-XX:-OmitStackTraceInFastThrow"
+                                         "--illegal-access=warn"]}
 
            :test          {:extra-paths ["test" "src/test_utils"]
                            :extra-deps  {org.clojure/test.check     {:mvn/version "0.10.0-alpha3"}
                                          eftest                     {:mvn/version "0.5.4"}
+                                         orchestra                  {:mvn/version "2018.12.06-2"}
                                          image-resizer              {:mvn/version "0.1.10"}}
                            ; It’s crucial to ensure that the JVM’s default character encoding is
                            ; UTF-8 because the renderer outputs UTF-8 encoded text to its stderr,

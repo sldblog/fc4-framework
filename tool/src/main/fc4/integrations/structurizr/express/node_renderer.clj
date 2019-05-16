@@ -1,4 +1,4 @@
-(ns fc4.integrations.structurizr.express.render
+(ns fc4.integrations.structurizr.express.node-renderer
   (:require [clojure.java.io      :as io        :refer [file]]
             [clojure.java.shell   :as shell     :refer [sh]]
             [clojure.spec.alpha   :as s]
@@ -87,7 +87,7 @@
 (comment
   (require :reload
            '[fc4.rendering :as rendering :refer [render]]
-           '[fc4.integrations.structurizr.express.render :refer [->NodeRenderer]]
+           '[fc4.integrations.structurizr.express.node-renderer :refer [->NodeRenderer]]
            '[fc4.io.util :refer [binary-spit]])
   (def test-data-dir "test/data/structurizr/express/")
   (def filenames

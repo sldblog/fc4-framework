@@ -1,7 +1,8 @@
 (ns fc4.util
   (:require [clojure.walk        :as walk  :refer [postwalk]]
             [clojure.spec.alpha  :as s]
-            [fc4.spec           :as fs]))
+            [cognitect.anomalies :as anom]
+            [fc4.spec            :as fs]))
 
 (s/def ::ns-tuples
   (s/+ (s/tuple simple-symbol? #{:as} simple-symbol?)))
@@ -104,3 +105,10 @@
      (if *throw-on-fail*
        (throw e)
        e))))
+
+(defn fault
+  "Convenience function for constructing an :cognitect.anomalies/anomaly with
+  :cognitect.anomalies/category being :cognitect.anomalies/fault."
+  [message]
+  {::anom/category ::anom/fault
+   ::anom/message message})
